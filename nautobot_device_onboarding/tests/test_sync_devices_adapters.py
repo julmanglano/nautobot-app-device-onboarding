@@ -70,7 +70,7 @@ class SyncDevicesNetworkAdapterTestCase(TransactionTestCase):
         returned_device_data = self.sync_devices_adapter.device_data
 
         for device_ip, data in returned_device_data.items():
-            unique_id = f"{self.testing_objects['location'].name}__{data['hostname']}"
+            unique_id = f"{self.testing_objects['location'].name}__{data['hostname']}__{data['serial']}"
             diffsync_device = self.sync_devices_adapter.get("device", unique_id)
             self.assertEqual(data["device_type"], diffsync_device.device_type__model)
             self.assertEqual(self.testing_objects["location"].name, diffsync_device.location__name)
@@ -179,7 +179,7 @@ class SyncDevicesNautobotAdapterTestCase(TransactionTestCase):
             self.assertEqual(device_type.part_number, diffsync_obj.part_number)
 
         for device in Device.objects.filter(primary_ip4__host__in=list(self.job.ip_address_inventory)):
-            unique_id = f"{device.location.name}__{device.name}"
+            unique_id = f"{device.location.name}__{device.name}__{device.serial}"
             diffsync_obj = self.sync_devices_adapter.get("device", unique_id)
             self.assertEqual(device.location.name, diffsync_obj.location__name)
             self.assertEqual(device.name, diffsync_obj.name)
@@ -245,7 +245,7 @@ class SyncDevicesNetworkAdapterVirtualChassisTestCase(TransactionTestCase):
         self.sync_devices_adapter.load()
 
         # Verify the master device was loaded
-        master_unique_id = f"{self.testing_objects['location'].name}__stack-switch-1"
+        master_unique_id = f"{self.testing_objects['location'].name}__stack-switch-1__STACK001"
         diffsync_master = self.sync_devices_adapter.get("device", master_unique_id)
         self.assertEqual("stack-switch-1", diffsync_master.name)
         self.assertEqual("C9300-48P", diffsync_master.device_type__model)
@@ -256,7 +256,7 @@ class SyncDevicesNetworkAdapterVirtualChassisTestCase(TransactionTestCase):
         self.assertEqual(15, diffsync_master.vc_priority)
 
         # Verify member 2 was loaded
-        member2_unique_id = f"{self.testing_objects['location'].name}__stack-switch-1:2"
+        member2_unique_id = f"{self.testing_objects['location'].name}__stack-switch-1:2__STACK002"
         diffsync_member2 = self.sync_devices_adapter.get("device", member2_unique_id)
         self.assertEqual("stack-switch-1:2", diffsync_member2.name)
         self.assertEqual("C9300-24P", diffsync_member2.device_type__model)
@@ -266,7 +266,7 @@ class SyncDevicesNetworkAdapterVirtualChassisTestCase(TransactionTestCase):
         self.assertEqual(14, diffsync_member2.vc_priority)
 
         # Verify member 3 was loaded
-        member3_unique_id = f"{self.testing_objects['location'].name}__stack-switch-1:3"
+        member3_unique_id = f"{self.testing_objects['location'].name}__stack-switch-1:3__STACK003"
         diffsync_member3 = self.sync_devices_adapter.get("device", member3_unique_id)
         self.assertEqual("stack-switch-1:3", diffsync_member3.name)
         self.assertEqual("C9300-48P", diffsync_member3.device_type__model)
@@ -309,7 +309,7 @@ class SyncDevicesNetworkAdapterVirtualChassisTestCase(TransactionTestCase):
         self.sync_devices_adapter.load()
 
         # Verify the standalone device was loaded as a regular device (not as virtual chassis)
-        device_unique_id = f"{self.testing_objects['location'].name}__standalone-switch-1"
+        device_unique_id = f"{self.testing_objects['location'].name}__standalone-switch-1__STANDALONE001"
         diffsync_device = self.sync_devices_adapter.get("device", device_unique_id)
         self.assertEqual("standalone-switch-1", diffsync_device.name)
         self.assertEqual("C9300-48P", diffsync_device.device_type__model)
@@ -347,7 +347,7 @@ class SyncDevicesNetworkAdapterVirtualChassisTestCase(TransactionTestCase):
 
         # The master (conductor) is switch 2 (serial CONDUCTOR002), NOT switch 1
         # It should get the hostname and primary IP
-        master_uid = f"{self.testing_objects['location'].name}__vsf-stack-1"
+        master_uid = f"{self.testing_objects['location'].name}__vsf-stack-1__CONDUCTOR002"
         diffsync_master = self.sync_devices_adapter.get("device", master_uid)
         self.assertEqual("vsf-stack-1", diffsync_master.name)
         self.assertEqual("C9300-24P", diffsync_master.device_type__model)
@@ -358,7 +358,7 @@ class SyncDevicesNetworkAdapterVirtualChassisTestCase(TransactionTestCase):
         self.assertEqual(15, diffsync_master.vc_priority)
 
         # Switch 1 (standby) should be a member, named by its switch number
-        member1_uid = f"{self.testing_objects['location'].name}__vsf-stack-1:1"
+        member1_uid = f"{self.testing_objects['location'].name}__vsf-stack-1:1__STANDBY001"
         diffsync_member1 = self.sync_devices_adapter.get("device", member1_uid)
         self.assertEqual("vsf-stack-1:1", diffsync_member1.name)
         self.assertEqual("C9300-48P", diffsync_member1.device_type__model)
@@ -366,7 +366,7 @@ class SyncDevicesNetworkAdapterVirtualChassisTestCase(TransactionTestCase):
         self.assertEqual(1, diffsync_member1.vc_position)
 
         # Switch 3 should be a member
-        member3_uid = f"{self.testing_objects['location'].name}__vsf-stack-1:3"
+        member3_uid = f"{self.testing_objects['location'].name}__vsf-stack-1:3__MEMBER003"
         diffsync_member3 = self.sync_devices_adapter.get("device", member3_uid)
         self.assertEqual("vsf-stack-1:3", diffsync_member3.name)
         self.assertEqual("MEMBER003", diffsync_member3.serial)
@@ -436,7 +436,7 @@ class SyncDevicesNetworkAdapterVirtualChassisTestCase(TransactionTestCase):
 
         # Should be loaded as a standalone device, not failed
         self.assertNotIn("10.1.1.31", self.sync_devices_adapter.failed_ip_addresses)
-        device_uid = f"{self.testing_objects['location'].name}__bad-stack-2"
+        device_uid = f"{self.testing_objects['location'].name}__bad-stack-2__BADSTACK002"
         diffsync_device = self.sync_devices_adapter.get("device", device_uid)
         self.assertEqual("bad-stack-2", diffsync_device.name)
         self.assertEqual("BADSTACK002", diffsync_device.serial)
@@ -589,7 +589,7 @@ class SyncDevicesNautobotAdapterVirtualChassisTestCase(TransactionTestCase):
         self.assertEqual("vc-master", diffsync_vc.master__name)
 
         # Verify the master device was loaded with VC attrs
-        master_uid = f"{self.testing_objects['location'].name}__vc-master"
+        master_uid = f"{self.testing_objects['location'].name}__vc-master__VCMASTER001"
         diffsync_master = self.sync_devices_adapter.get("device", master_uid)
         self.assertEqual("vc-master", diffsync_master.name)
         self.assertEqual("existing-vc", diffsync_master.virtual_chassis__name)
@@ -598,7 +598,7 @@ class SyncDevicesNautobotAdapterVirtualChassisTestCase(TransactionTestCase):
         self.assertEqual("10.99.99.1", diffsync_master.primary_ip4__host)
 
         # Verify the member device was loaded with VC attrs
-        member_uid = f"{self.testing_objects['location'].name}__vc-member-2"
+        member_uid = f"{self.testing_objects['location'].name}__vc-member-2__VCMEMBER002"
         diffsync_member = self.sync_devices_adapter.get("device", member_uid)
         self.assertEqual("vc-member-2", diffsync_member.name)
         self.assertEqual("existing-vc", diffsync_member.virtual_chassis__name)

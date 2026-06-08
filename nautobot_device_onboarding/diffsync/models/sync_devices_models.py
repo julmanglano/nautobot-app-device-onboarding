@@ -32,9 +32,9 @@ class SyncDevicesDevice(DiffSyncModel):
     _identifiers = (
         "location__name",
         "name",
+        "serial",
     )
     _attributes = (
-        "serial",
         "device_type__model",
         "mask_length",
         "primary_ip4__host",
@@ -111,7 +111,7 @@ class SyncDevicesDevice(DiffSyncModel):
                 name=ids["name"],
                 platform=platform,
                 secrets_group=job_form_attrs["secrets_group"],
-                serial=attrs["serial"],
+                serial=ids["serial"],
             )
             device.validated_save()
         return device
@@ -167,7 +167,7 @@ class SyncDevicesDevice(DiffSyncModel):
         device.device_type = DeviceType.objects.get(model=attrs["device_type__model"])
         device.platform = platform
         device.secrets_group = job_form_attrs["secrets_group"]
-        device.serial = attrs["serial"]
+        device.serial = ids["serial"]
 
         return device
 

@@ -476,15 +476,16 @@ class SyncDevicesDeviceTestCase(TransactionTestCase):
     def test_device_update__standalone_becomes_vc_master__success(self, device_data):
         """A device first onboarded as standalone, then re-onboarded as the master of a stack.
 
-        Proves the change in PR #567: with `serial` as an attribute ( not an identifier ), the
-        next sync matches on ( location, name ) and updates the existing Device row — even when
-        the network adapter reports a different serial for the same chassis on the second sync
+        The network adapter reports a different serial for the same chassis on the second sync
         ( e.g. modules[0].serial vs the chassis-level serial, which the parser pulls from
-        different fields and can differ ).
-
-        Under the previous design ( serial in `_identifiers` ), the second sync would have seen
-        a new device and called create() — ending up with a duplicate, with the VC-attachment
+        different fields and can differ ). Without operator opt-in the second sync would create
+        a duplicate Device row, leaving the existing standalone unchanged and the VC-attachment
         logic in update() never reached.
+
+        Note: requires `update_devices_without_primary_ip=True` on the form. The flag's
+        `_get_or_create_device()` code path is serial-blind in its ORM lookup, so it covers
+        serial drift in addition to its original primary-IP-mismatch purpose. This is the
+        opt-in path the maintainer's plan relies on for the standalone->stack transition.
         """
         # First sync: device appears as a single-module ( standalone ) device.
         initial_data = {
@@ -518,7 +519,7 @@ class SyncDevicesDeviceTestCase(TransactionTestCase):
             "port": 22,
             "timeout": 30,
             "set_mgmt_only": True,
-            "update_devices_without_primary_ip": False,
+            "update_devices_without_primary_ip": True,
             "device_role": self.testing_objects["device_role"].pk,
             "device_status": self.testing_objects["status"].pk,
             "interface_status": self.testing_objects["status"].pk,
@@ -607,9 +608,12 @@ class SyncDevicesDeviceTestCase(TransactionTestCase):
 
         Covers the device-refresh / RMA scenario: a standalone chassis is swapped out for a
         replacement unit. The new unit reports a different serial but is brought up under the
-        same hostname and management IP. With `serial` as an attribute, the second sync matches
-        the existing Device row on ( location, name ) and updates the serial — no duplicate,
-        no delete+create.
+        same hostname and management IP. Without operator opt-in the second sync would create
+        a duplicate Device row instead of updating the existing one.
+
+        Note: requires `update_devices_without_primary_ip=True` on the form. See the note in
+        test_device_update__standalone_becomes_vc_master__success for context on why the flag
+        covers serial drift.
         """
         # First sync: standalone device with original serial.
         initial_data = {
@@ -643,7 +647,7 @@ class SyncDevicesDeviceTestCase(TransactionTestCase):
             "port": 22,
             "timeout": 30,
             "set_mgmt_only": True,
-            "update_devices_without_primary_ip": False,
+            "update_devices_without_primary_ip": True,
             "device_role": self.testing_objects["device_role"].pk,
             "device_status": self.testing_objects["status"].pk,
             "interface_status": self.testing_objects["status"].pk,
